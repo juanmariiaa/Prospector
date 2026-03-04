@@ -38,3 +38,4 @@
 {"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T12:54:41Z","event_type":"closed","id":40,"issue_id":"Prospector-4cj","new_value":"Closed","old_value":""}
 {"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T13:12:49Z","event_type":"created","id":41,"issue_id":"Prospector-0t4","new_value":"","old_value":""}
 {"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T13:15:00Z","event_type":"closed","id":42,"issue_id":"Prospector-0t4","new_value":"Fixed: web_es_mobile now detects \u003cmeta name=viewport\u003e from HTML directly; screenshot block and playwright imports removed","old_value":""}
+{"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T15:37:32Z","event_type":"created","id":43,"issue_id":"Prospector-epj","new_value":"","old_value":""}
