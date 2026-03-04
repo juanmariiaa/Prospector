@@ -90,10 +90,10 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
     try:
         client = genai.Client(api_key=settings.gemini_api_key)
         logger.debug(
-            f"Gemini request for {business.get('nombre')}: model=gemini-2.0-flash"
+            f"Gemini request for {business.get('nombre')}: model=gemini-2.0-flash-lite"
         )
         response = await client.aio.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.0-flash-lite",
             contents=prompt,
         )
         raw = response.text.strip()
