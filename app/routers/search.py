@@ -2,7 +2,7 @@
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -65,3 +65,13 @@ async def job_status(job_id: str) -> JobStatus:
         count=job["count"],
         error=job.get("error"),
     )
+
+
+@router.delete("/businesses", response_model=dict[str, int])
+async def delete_all_businesses(
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, int]:
+    """Delete all businesses from the database."""
+    result = await db.execute(delete(Business))
+    await db.commit()
+    return {"deleted": result.rowcount}
