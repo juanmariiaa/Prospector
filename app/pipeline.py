@@ -12,7 +12,7 @@ from app.agents.agent1_maps import scrape_google_maps
 from app.agents.agent2_contact import extract_contact
 from app.agents.agent3_web import analyze_web
 from app.agents.agent4_scoring import score_business
-from app.db.database import async_session
+from app.db.database import AsyncSessionLocal as async_session
 from app.models.orm import Business
 
 logger = logging.getLogger(__name__)
