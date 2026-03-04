@@ -1,9 +1,9 @@
-"""Agent 4: AI scoring of sales opportunity using Groq API."""
+"""Agent 4: AI scoring of sales opportunity using Gemini API."""
 import json
 import logging
 from typing import Any
 
-from openai import AsyncOpenAI
+from google import genai
 
 from app.config import settings
 
@@ -37,7 +37,7 @@ Respond ONLY with a valid JSON object, no markdown, no explanation:
 
 async def score_business(business: dict[str, Any]) -> dict[str, Any]:
     """
-    Score a business's sales opportunity using Groq.
+    Score a business's sales opportunity using Gemini.
 
     Args:
         business: full business dict with all collected data
@@ -55,8 +55,8 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
             "oportunidad_razon": "Sin presencia web — máxima oportunidad de venta.",
         }
 
-    if not settings.groq_api_key:
-        logger.warning("No GROQ_API_KEY set, returning default score 3")
+    if not settings.gemini_api_key:
+        logger.warning("No GEMINI_API_KEY set, returning default score 3")
         return {
             "oportunidad_score": 3,
             "oportunidad_razon": "No se pudo analizar (API key no configurada).",
@@ -88,19 +88,16 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
 
     raw = ""
     try:
-        client = AsyncOpenAI(api_key=settings.groq_api_key, base_url="https://api.groq.com/openai/v1")
+        client = genai.Client(api_key=settings.gemini_api_key)
         logger.debug(
-            f"Groq request body for {business.get('nombre')}:\n"
-            f"{json.dumps({'model': 'llama-3.3-70b-versatile', 'max_tokens': 256, 'messages': [{'role': 'user', 'content': prompt}]}, ensure_ascii=False, indent=2)}"
+            f"Gemini request for {business.get('nombre')}: model=gemini-2.0-flash"
         )
-        message = await client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            max_tokens=256,
-            messages=[{"role": "user", "content": prompt}],
+        response = await client.aio.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
         )
-
-        raw = message.choices[0].message.content.strip()
-        logger.debug(f"Groq response for {business.get('nombre')}: {raw}")
+        raw = response.text.strip()
+        logger.debug(f"Gemini response for {business.get('nombre')}: {raw}")
 
         # Parse JSON — strip markdown fences if present
         if raw.startswith("```"):
@@ -119,14 +116,14 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
         }
 
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse Groq JSON response: {e}. Raw: {raw!r}")
+        logger.error(f"Failed to parse Gemini JSON response: {e}. Raw: {raw!r}")
         return {
             "oportunidad_score": 3,
             "oportunidad_razon": "Error al parsear respuesta de IA.",
         }
     except Exception as e:
         logger.error(
-            f"Groq API error for {business.get('nombre', 'unknown')}: {e}",
+            f"Gemini API error for {business.get('nombre', 'unknown')}: {e}",
             exc_info=True,
         )
         return {
