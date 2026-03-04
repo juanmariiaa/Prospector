@@ -1,9 +1,9 @@
-"""Agent 4: AI scoring of sales opportunity using Claude API."""
+"""Agent 4: AI scoring of sales opportunity using Groq API."""
 import json
 import logging
 from typing import Any
 
-import anthropic
+from openai import AsyncOpenAI
 
 from app.config import settings
 
@@ -31,7 +31,7 @@ Respond ONLY with a valid JSON object, no markdown, no explanation:
 
 async def score_business(business: dict[str, Any]) -> dict[str, Any]:
     """
-    Score a business's sales opportunity using Claude.
+    Score a business's sales opportunity using Groq.
 
     Args:
         business: full business dict with all collected data
@@ -49,8 +49,8 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
             "oportunidad_razon": "Sin presencia web — máxima oportunidad de venta.",
         }
 
-    if not settings.anthropic_api_key:
-        logger.warning("No ANTHROPIC_API_KEY set, returning default score 3")
+    if not settings.groq_api_key:
+        logger.warning("No GROQ_API_KEY set, returning default score 3")
         return {
             "oportunidad_score": 3,
             "oportunidad_razon": "No se pudo analizar (API key no configurada).",
@@ -74,15 +74,15 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
 
     raw = ""
     try:
-        client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-        message = await client.messages.create(
-            model="claude-sonnet-4-20250514",
+        client = AsyncOpenAI(api_key=settings.groq_api_key, base_url="https://api.groq.com/openai/v1")
+        message = await client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             max_tokens=256,
             messages=[{"role": "user", "content": prompt}],
         )
 
-        raw = message.content[0].text.strip()
-        logger.debug(f"Claude response for {business.get('nombre')}: {raw}")
+        raw = message.choices[0].message.content.strip()
+        logger.debug(f"Groq response for {business.get('nombre')}: {raw}")
 
         # Parse JSON — strip markdown fences if present
         if raw.startswith("```"):
@@ -101,14 +101,14 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
         }
 
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse Claude JSON response: {e}. Raw: {raw!r}")
+        logger.error(f"Failed to parse Groq JSON response: {e}. Raw: {raw!r}")
         return {
             "oportunidad_score": 3,
             "oportunidad_razon": "Error al parsear respuesta de IA.",
         }
     except Exception as e:
         logger.error(
-            f"Claude API error for {business.get('nombre', 'unknown')}: {e}",
+            f"Groq API error for {business.get('nombre', 'unknown')}: {e}",
             exc_info=True,
         )
         return {
