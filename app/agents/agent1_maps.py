@@ -16,6 +16,15 @@ SOCIAL_DOMAINS = {
     "linkedin.com": "linkedin",
     "tiktok.com": "tiktok",
     "youtube.com": "youtube",
+    "booking.com": "booking",
+    "tripadvisor.com": "tripadvisor",
+    "tripadvisor.es": "tripadvisor",
+    "yelp.com": "yelp",
+    "whatsapp.com": "whatsapp",
+    "wa.me": "whatsapp",
+    "t.me": "telegram",
+    "linktr.ee": "linktree",
+    "maps.google.com": "google_maps",
 }
 
 def _detect_social(url: str) -> str | None:
