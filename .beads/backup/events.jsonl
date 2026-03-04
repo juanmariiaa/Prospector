@@ -21,3 +21,6 @@
 {"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T11:52:20Z","event_type":"created","id":23,"issue_id":"Prospector-lm9","new_value":"","old_value":""}
 {"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T11:52:48Z","event_type":"closed","id":24,"issue_id":"Prospector-lm9","new_value":"Closed","old_value":""}
 {"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T12:06:45Z","event_type":"created","id":25,"issue_id":"Prospector-fpk","new_value":"","old_value":""}
+{"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T12:08:02Z","event_type":"closed","id":26,"issue_id":"Prospector-fpk","new_value":"Closed","old_value":""}
+{"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T12:19:57Z","event_type":"created","id":27,"issue_id":"Prospector-g24","new_value":"","old_value":""}
+{"actor":"juanmariaariza","comment":null,"created_at":"2026-03-04T12:29:59Z","event_type":"created","id":28,"issue_id":"Prospector-g24.1","new_value":"","old_value":""}
