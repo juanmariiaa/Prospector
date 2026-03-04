@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
@@ -16,6 +17,13 @@ AsyncSessionLocal = async_sessionmaker(
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add web_red_social column to existing DBs
+        try:
+            await conn.execute(
+                text("ALTER TABLE businesses ADD COLUMN web_red_social VARCHAR(50)")
+            )
+        except Exception:
+            pass  # column already exists
 
 async def get_db():
     async with AsyncSessionLocal() as session:

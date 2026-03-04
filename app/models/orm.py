@@ -22,6 +22,7 @@ class Business(Base):
     oportunidad_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     oportunidad_razon: Mapped[str | None] = mapped_column(Text, nullable=True)
     web_es_mobile: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    web_red_social: Mapped[str | None] = mapped_column(String(50), nullable=True)
     web_velocidad_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     maps_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     zona_busqueda: Mapped[str | None] = mapped_column(String(255), nullable=True)
