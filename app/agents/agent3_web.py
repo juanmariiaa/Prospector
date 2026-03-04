@@ -110,30 +110,39 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
         api_key = settings.pagespeed_api_key
         if api_key and api_key not in ("your-key-here", ""):
             params["key"] = api_key
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(PAGESPEED_API_URL, params=params)
+
+        for attempt in range(2):  # try once, retry once on 429
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.get(PAGESPEED_API_URL, params=params)
+            if resp.status_code == 429:
+                if attempt == 0:
+                    logger.warning(f"PageSpeed 429 for {website}, retrying in 3s...")
+                    await asyncio.sleep(3)
+                    continue
+                else:
+                    logger.warning(f"PageSpeed 429 persists for {website}, skipping")
+                    break
             resp.raise_for_status()
             data = resp.json()
 
-        categories = data.get("lighthouseResult", {}).get("categories", {})
-        perf = categories.get("performance", {})
-        pagespeed_score = perf.get("score")  # 0.0 – 1.0
+            categories = data.get("lighthouseResult", {}).get("categories", {})
+            perf = categories.get("performance", {})
+            pagespeed_score = perf.get("score")  # 0.0 – 1.0
 
-        # Load time from FCP audit
-        audits = data.get("lighthouseResult", {}).get("audits", {})
-        fcp = audits.get("first-contentful-paint", {})
-        fcp_ms = fcp.get("numericValue")
-        if fcp_ms:
-            result["web_velocidad_ms"] = int(fcp_ms)
+            audits = data.get("lighthouseResult", {}).get("audits", {})
+            fcp = audits.get("first-contentful-paint", {})
+            fcp_ms = fcp.get("numericValue")
+            if fcp_ms:
+                result["web_velocidad_ms"] = int(fcp_ms)
 
-        # Mobile-friendly check
-        viewport_audit = audits.get("viewport", {})
-        result["web_es_mobile"] = viewport_audit.get("score", 0) == 1
+            viewport_audit = audits.get("viewport", {})
+            result["web_es_mobile"] = viewport_audit.get("score", 0) == 1
 
-        logger.info(
-            f"PageSpeed for {website}: score={pagespeed_score}, "
-            f"fcp={result['web_velocidad_ms']}ms"
-        )
+            logger.info(
+                f"PageSpeed for {website}: score={pagespeed_score}, "
+                f"fcp={result['web_velocidad_ms']}ms"
+            )
+            break  # success
 
     except httpx.TimeoutException:
         logger.warning(f"PageSpeed timeout for {website}")
