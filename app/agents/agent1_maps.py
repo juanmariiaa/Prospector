@@ -285,21 +285,48 @@ async def _extract_business_details(page) -> dict[str, Any] | None:
                 web_red_social = social
                 website = ""
 
-        # Rating
+        # Rating — try multiple approaches
         rating_google = None
-        rating_selectors = [
-            'span.ceNzKf[aria-hidden="true"]',
-            '[data-section-id="overview"] .F7nice span[aria-hidden="true"]',
-        ]
-        for sel in rating_selectors:
-            el = await page.query_selector(sel)
+
+        # Approach 1: aria-label on elements like "4,5 estrellas" or "4.5 stars"
+        for selector in [
+            'span[aria-label*="estrellas"]',
+            'span[aria-label*="stars"]',
+            'button[aria-label*="estrellas"]',
+            'button[aria-label*="stars"]',
+            'g-review-stars[aria-label]',
+        ]:
+            el = await page.query_selector(selector)
             if el:
-                try:
+                label = (await el.get_attribute("aria-label") or "").strip()
+                # Extract number like "4,5" or "4.5" from the label
+                match = re.search(r"(\d+[.,]\d+|\d+)", label)
+                if match:
+                    try:
+                        rating_google = float(match.group(1).replace(",", "."))
+                        break
+                    except ValueError:
+                        pass
+
+        # Approach 2: span[aria-hidden="true"] with float-like text
+        if rating_google is None:
+            for selector in [
+                'span.ceNzKf[aria-hidden="true"]',
+                '.F7nice span[aria-hidden="true"]',
+                'span[aria-hidden="true"]',
+            ]:
+                els = await page.query_selector_all(selector)
+                for el in els:
                     text = (await el.inner_text()).strip().replace(",", ".")
-                    rating_google = float(text)
+                    try:
+                        val = float(text)
+                        if 1.0 <= val <= 5.0:
+                            rating_google = val
+                            break
+                    except ValueError:
+                        continue
+                if rating_google is not None:
                     break
-                except ValueError:
-                    pass
 
         # Review count
         num_reseñas = None
@@ -307,13 +334,20 @@ async def _extract_business_details(page) -> dict[str, Any] | None:
             'button.HHrUdb span',
             '[aria-label*="reseña"] span',
             'span[aria-label*="reseña"]',
+            'span[aria-label*="reseñas"]',
+            'span[aria-label*="reviews"]',
         ]
         for sel in review_selectors:
             el = await page.query_selector(sel)
             if el:
                 try:
+                    # Try inner text first
                     text = (await el.inner_text()).strip()
                     num_str = re.sub(r"[^\d]", "", text)
+                    if not num_str:
+                        # Fallback: extract digits from aria-label
+                        label = (await el.get_attribute("aria-label") or "").strip()
+                        num_str = re.sub(r"[^\d]", "", label)
                     if num_str:
                         num_reseñas = int(num_str)
                         break
