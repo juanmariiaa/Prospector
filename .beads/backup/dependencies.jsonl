@@ -1,0 +1,16 @@
+{"created_at":"2026-03-04T10:49:39Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.1","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:10Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.2","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.1","issue_id":"Prospector-0f3.2","type":"blocks"}
+{"created_at":"2026-03-04T10:50:10Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.3","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.1","issue_id":"Prospector-0f3.3","type":"blocks"}
+{"created_at":"2026-03-04T10:50:14Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.4","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.1","issue_id":"Prospector-0f3.4","type":"blocks"}
+{"created_at":"2026-03-04T10:50:17Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.5","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.1","issue_id":"Prospector-0f3.5","type":"blocks"}
+{"created_at":"2026-03-04T10:50:24Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.6","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.2","issue_id":"Prospector-0f3.6","type":"blocks"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.3","issue_id":"Prospector-0f3.6","type":"blocks"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.4","issue_id":"Prospector-0f3.6","type":"blocks"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.5","issue_id":"Prospector-0f3.6","type":"blocks"}
+{"created_at":"2026-03-04T10:50:29Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.7","type":"parent-child"}
+{"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.6","issue_id":"Prospector-0f3.7","type":"blocks"}
