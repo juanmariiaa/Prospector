@@ -85,3 +85,4 @@ playwright/.cache/
 *.log
 *.tmp
 *.bak
+credentials/
