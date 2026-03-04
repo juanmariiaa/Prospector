@@ -1,5 +1,6 @@
 """Pipeline orchestrator: runs agents 1→2→3→4 for a search query."""
 import asyncio
+import json
 import logging
 import time
 import uuid
@@ -64,6 +65,14 @@ async def run_pipeline(query: str, max_results: int, job_id: str) -> None:
                     )
                     business_data.update(contact)
                     business_data.update(web_info)
+
+                    # Serialize web_analisis dict → JSON string for persistence
+                    web_analisis = business_data.get("web_analisis")
+                    business_data["web_datos_extra"] = (
+                        json.dumps(web_analisis, ensure_ascii=False)
+                        if web_analisis is not None
+                        else None
+                    )
 
                     # Agent 4 — AI scoring
                     scoring = await score_business(business_data)

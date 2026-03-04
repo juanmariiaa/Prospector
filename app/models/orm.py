@@ -24,6 +24,8 @@ class Business(Base):
     web_es_mobile: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     web_red_social: Mapped[str | None] = mapped_column(String(50), nullable=True)
     web_velocidad_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    web_contenido: Mapped[str | None] = mapped_column(Text, nullable=True)
+    web_datos_extra: Mapped[str | None] = mapped_column(Text, nullable=True)
     maps_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     zona_busqueda: Mapped[str | None] = mapped_column(String(255), nullable=True)
     fecha_scraping: Mapped[datetime] = mapped_column(

@@ -19,6 +19,8 @@ class BusinessCreate(BaseModel):
     web_es_mobile: bool | None = None
     web_red_social: str | None = None
     web_velocidad_ms: int | None = None
+    web_contenido: str | None = None
+    web_datos_extra: str | None = None
     maps_url: str | None = None
     zona_busqueda: str | None = None
     estado: str | None = None
@@ -42,6 +44,8 @@ class BusinessOut(BaseModel):
     web_es_mobile: bool | None = None
     web_red_social: str | None = None
     web_velocidad_ms: int | None = None
+    web_contenido: str | None = None
+    web_datos_extra: str | None = None
     maps_url: str | None = None
     zona_busqueda: str | None = None
     fecha_scraping: datetime
