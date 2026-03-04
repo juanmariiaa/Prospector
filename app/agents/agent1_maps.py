@@ -67,7 +67,7 @@ async def scrape_google_maps(query: str, max_results: int = 30) -> list[dict[str
             no_new_results_count = 0
 
             while len(results) < max_results and scroll_attempts < max_scrolls:
-                cards = await page.query_selector_all('[role="feed"] [data-item-id]')
+                cards = await page.query_selector_all('.Nv2PK')
                 new_found = False
 
                 for card in cards:
@@ -75,7 +75,7 @@ async def scrape_google_maps(query: str, max_results: int = 30) -> list[dict[str
                         break
 
                     try:
-                        item_id = await card.get_attribute("data-item-id") or ""
+                        item_id = await card.get_attribute("aria-label") or ""
                         if not item_id or item_id in seen_ids:
                             continue
 
