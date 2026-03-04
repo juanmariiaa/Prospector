@@ -15,3 +15,5 @@
 {"created_at":"2026-03-04T10:50:29Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3","issue_id":"Prospector-0f3.7","type":"parent-child"}
 {"created_at":"2026-03-04T10:50:36Z","created_by":"juanmariaariza","depends_on_id":"Prospector-0f3.6","issue_id":"Prospector-0f3.7","type":"blocks"}
 {"created_at":"2026-03-04T12:29:59Z","created_by":"juanmariaariza","depends_on_id":"Prospector-g24","issue_id":"Prospector-g24.1","type":"parent-child"}
+{"created_at":"2026-03-04T12:30:01Z","created_by":"juanmariaariza","depends_on_id":"Prospector-g24","issue_id":"Prospector-g24.2","type":"parent-child"}
+{"created_at":"2026-03-04T12:30:01Z","created_by":"juanmariaariza","depends_on_id":"Prospector-g24","issue_id":"Prospector-g24.3","type":"parent-child"}
