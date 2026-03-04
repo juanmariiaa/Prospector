@@ -1,11 +1,9 @@
-"""Agent 3: Web quality analyzer — PageSpeed Insights + mobile screenshot."""
+"""Agent 3: Web quality analyzer — PageSpeed Insights + mobile detection."""
 import asyncio
 import logging
-from pathlib import Path
 from typing import Any
 
 import httpx
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 from app.config import settings
 from app.utils.url import normalize_url
@@ -13,11 +11,15 @@ from app.utils.url import normalize_url
 logger = logging.getLogger(__name__)
 
 PAGESPEED_API_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
-SCREENSHOTS_DIR = Path("screenshots")
 
 
-async def _scrape_web_content(url: str) -> str:
-    """Fetch webpage and extract readable text content for AI analysis."""
+async def _scrape_web_content(url: str) -> tuple[str, bool]:
+    """Fetch webpage and extract readable text content for AI analysis.
+
+    Returns:
+        Tuple of (text_content, has_viewport) where has_viewport is True
+        if a <meta name="viewport"> tag is present in the HTML.
+    """
     try:
         async with httpx.AsyncClient(
             timeout=15.0,
@@ -29,10 +31,13 @@ async def _scrape_web_content(url: str) -> str:
             html = resp.text
     except Exception as e:
         logger.warning(f"Could not fetch {url} for content scraping: {e}")
-        return ""
+        return "", False
 
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
+
+    # Check for viewport meta BEFORE stripping tags
+    has_viewport = bool(soup.find("meta", attrs={"name": "viewport"}))
 
     # Remove noise
     for tag in soup(["script", "style", "nav", "footer", "header", "aside", "noscript"]):
@@ -59,7 +64,7 @@ async def _scrape_web_content(url: str) -> str:
             parts.append(text)
 
     content = "\n".join(parts)
-    return content[:3000]  # cap to avoid huge prompts
+    return content[:3000], has_viewport  # cap to avoid huge prompts
 
 
 def _score_from_performance(perf_score: float | None) -> int:
@@ -79,7 +84,7 @@ def _score_from_performance(perf_score: float | None) -> int:
 
 async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
     """
-    Analyze website quality using PageSpeed Insights and Playwright screenshot.
+    Analyze website quality using PageSpeed Insights and HTML inspection.
 
     Args:
         business: dict with 'website' and 'nombre' keys
@@ -87,13 +92,12 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
     Returns:
         dict with keys:
           web_score (int 1-5), web_es_mobile (bool | None),
-          web_velocidad_ms (int | None), screenshot_path (str | None)
+          web_velocidad_ms (int | None)
     """
     result: dict[str, Any] = {
         "web_score": None,
         "web_es_mobile": None,
         "web_velocidad_ms": None,
-        "screenshot_path": None,
     }
 
     website = business.get("website", "")
@@ -135,9 +139,6 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
             if fcp_ms:
                 result["web_velocidad_ms"] = int(fcp_ms)
 
-            viewport_audit = audits.get("viewport", {})
-            result["web_es_mobile"] = viewport_audit.get("score", 0) == 1
-
             logger.info(
                 f"PageSpeed for {website}: score={pagespeed_score}, "
                 f"fcp={result['web_velocidad_ms']}ms"
@@ -151,64 +152,16 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
 
     result["web_score"] = _score_from_performance(pagespeed_score)
 
-    # Scrape webpage text for AI analysis
+    # Scrape webpage text for AI analysis and detect mobile viewport
     web_contenido = ""
+    has_viewport = False
     if website:
-        web_contenido = await _scrape_web_content(website)
+        web_contenido, has_viewport = await _scrape_web_content(website)
         if web_contenido:
             logger.info(f"Scraped {len(web_contenido)} chars from {website}")
         else:
             logger.warning(f"No content scraped from {website}")
     result["web_contenido"] = web_contenido
-
-    # --- Screenshot ---
-    try:
-        SCREENSHOTS_DIR.mkdir(exist_ok=True)
-        nombre_safe = "".join(
-            c if c.isalnum() or c in "-_" else "_"
-            for c in business.get("nombre", "business")[:50]
-        )
-        screenshot_path = SCREENSHOTS_DIR / f"{nombre_safe}.png"
-
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(
-                viewport={"width": 375, "height": 812},
-                device_scale_factor=2,
-                is_mobile=True,
-                user_agent=(
-                    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) "
-                    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 "
-                    "Mobile/15E148 Safari/604.1"
-                ),
-            )
-            page = await context.new_page()
-
-            try:
-                await page.goto(website, wait_until="domcontentloaded", timeout=20000)
-                # Dismiss cookie banners
-                for label in ("Aceptar", "Accept", "Rechazar todo", "Reject all", "OK", "Agree"):
-                    try:
-                        btn = await page.query_selector(f'button:has-text("{label}")')
-                        if btn:
-                            await btn.click()
-                            await asyncio.sleep(0.5)
-                            break
-                    except Exception:
-                        pass
-                await page.wait_for_timeout(2000)
-                await page.screenshot(path=str(screenshot_path), full_page=False)
-                result["screenshot_path"] = str(screenshot_path)
-                logger.info(f"Screenshot saved: {screenshot_path}")
-
-            except PlaywrightTimeoutError:
-                logger.warning(f"Timeout taking screenshot of {website}")
-            except Exception as e:
-                logger.warning(f"Screenshot error for {website}: {e}")
-            finally:
-                await browser.close()
-
-    except Exception as e:
-        logger.error(f"Error in screenshot flow for {website}: {e}", exc_info=True)
+    result["web_es_mobile"] = has_viewport
 
     return result
