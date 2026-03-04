@@ -1,4 +1,5 @@
 """Agent 3: Web quality analyzer — PageSpeed Insights + mobile screenshot."""
+import asyncio
 import logging
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,52 @@ logger = logging.getLogger(__name__)
 
 PAGESPEED_API_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 SCREENSHOTS_DIR = Path("screenshots")
+
+
+async def _scrape_web_content(url: str) -> str:
+    """Fetch webpage and extract readable text content for AI analysis."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=15.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; Prospector/1.0)"},
+        ) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            html = resp.text
+    except Exception as e:
+        logger.warning(f"Could not fetch {url} for content scraping: {e}")
+        return ""
+
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Remove noise
+    for tag in soup(["script", "style", "nav", "footer", "header", "aside", "noscript"]):
+        tag.decompose()
+
+    parts: list[str] = []
+
+    title = soup.find("title")
+    if title:
+        parts.append(f"TÍTULO: {title.get_text(strip=True)}")
+
+    meta_desc = soup.find("meta", attrs={"name": "description"})
+    if meta_desc and meta_desc.get("content"):
+        parts.append(f"META DESCRIPCIÓN: {meta_desc['content'].strip()}")
+
+    for heading in soup.find_all(["h1", "h2", "h3"], limit=10):
+        text = heading.get_text(strip=True)
+        if text:
+            parts.append(f"{heading.name.upper()}: {text}")
+
+    for p in soup.find_all("p", limit=20):
+        text = p.get_text(strip=True)
+        if len(text) > 40:
+            parts.append(text)
+
+    content = "\n".join(parts)
+    return content[:3000]  # cap to avoid huge prompts
 
 
 def _score_from_performance(perf_score: float | None) -> int:
@@ -101,6 +148,16 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
 
     result["web_score"] = _score_from_performance(pagespeed_score)
 
+    # Scrape webpage text for AI analysis
+    web_contenido = ""
+    if website:
+        web_contenido = await _scrape_web_content(website)
+        if web_contenido:
+            logger.info(f"Scraped {len(web_contenido)} chars from {website}")
+        else:
+            logger.warning(f"No content scraped from {website}")
+    result["web_contenido"] = web_contenido
+
     # --- Screenshot ---
     try:
         SCREENSHOTS_DIR.mkdir(exist_ok=True)
@@ -126,6 +183,16 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
 
             try:
                 await page.goto(website, wait_until="domcontentloaded", timeout=20000)
+                # Dismiss cookie banners
+                for label in ("Aceptar", "Accept", "Rechazar todo", "Reject all", "OK", "Agree"):
+                    try:
+                        btn = await page.query_selector(f'button:has-text("{label}")')
+                        if btn:
+                            await btn.click()
+                            await asyncio.sleep(0.5)
+                            break
+                    except Exception:
+                        pass
                 await page.wait_for_timeout(2000)
                 await page.screenshot(path=str(screenshot_path), full_page=False)
                 result["screenshot_path"] = str(screenshot_path)

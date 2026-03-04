@@ -21,8 +21,14 @@ SCORING SCALE:
 - 2 = Low opportunity (decent site, minor improvements possible)
 - 1 = Minimal opportunity (professional modern site, little to improve)
 
-BUSINESS DATA:
-{business_data}
+BUSINESS INFO:
+{business_info}
+
+WEBPAGE CONTENT SCRAPED:
+{web_contenido}
+
+PAGESPEED METRICS:
+{pagespeed_info}
 
 Respond ONLY with a valid JSON object, no markdown, no explanation:
 {{"score": <integer 1-5>, "razon": "<concise Spanish explanation, max 150 chars>"}}
@@ -56,21 +62,29 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
             "oportunidad_razon": "No se pudo analizar (API key no configurada).",
         }
 
-    # Build a clean summary for the prompt (avoid sending raw HTML)
-    summary = {
+    business_info = json.dumps({
         "nombre": business.get("nombre"),
         "categoria": business.get("categoria"),
         "website": business.get("website"),
         "rating_google": business.get("rating_google"),
         "num_reseñas": business.get("num_reseñas"),
+        "tiene_email": bool(business.get("email")),
+        "redes_sociales": list((business.get("redes_sociales") or {}).keys()),
+    }, ensure_ascii=False, indent=2)
+
+    pagespeed_info = json.dumps({
         "web_score_tecnico": business.get("web_score"),
         "web_es_mobile": business.get("web_es_mobile"),
         "web_velocidad_ms": business.get("web_velocidad_ms"),
-        "tiene_email": bool(business.get("email")),
-        "redes_sociales": list((business.get("redes_sociales") or {}).keys()),
-    }
+    }, ensure_ascii=False)
 
-    prompt = SCORING_PROMPT.format(business_data=json.dumps(summary, ensure_ascii=False, indent=2))
+    web_contenido = business.get("web_contenido") or "(no se pudo obtener contenido de la web)"
+
+    prompt = SCORING_PROMPT.format(
+        business_info=business_info,
+        web_contenido=web_contenido,
+        pagespeed_info=pagespeed_info,
+    )
 
     raw = ""
     try:
