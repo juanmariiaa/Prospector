@@ -95,13 +95,20 @@ async def scrape_google_maps(query: str, max_results: int = 30) -> list[dict[str
                                 f"{business.get('nombre', 'unknown')}"
                             )
 
-                        # Navigate back to results list
-                        back_btn = await page.query_selector('button[aria-label="Atrás"]')
-                        if not back_btn:
-                            back_btn = await page.query_selector('button[aria-label="Back"]')
+                        # Navigate back to results list (locale-agnostic)
+                        back_btn = None
+                        for label in ("Atrás", "Back", "Voltar", "Retour", "Zurück"):
+                            back_btn = await page.query_selector(
+                                f'button[aria-label="{label}"]'
+                            )
+                            if back_btn:
+                                break
                         if back_btn:
                             await back_btn.click()
-                            await asyncio.sleep(1)
+                        else:
+                            # Fallback: Escape closes the detail panel
+                            await page.keyboard.press("Escape")
+                        await asyncio.sleep(1)
 
                     except Exception as e:
                         logger.warning(f"Error processing card {item_id}: {e}")

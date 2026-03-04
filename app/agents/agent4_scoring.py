@@ -72,6 +72,7 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
 
     prompt = SCORING_PROMPT.format(business_data=json.dumps(summary, ensure_ascii=False, indent=2))
 
+    raw = ""
     try:
         client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
         message = await client.messages.create(

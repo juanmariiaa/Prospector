@@ -1,6 +1,5 @@
 """Agent 3: Web quality analyzer — PageSpeed Insights + mobile screenshot."""
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +7,7 @@ import httpx
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 from app.config import settings
+from app.utils.url import normalize_url
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +54,7 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
         logger.info(f"No website for {business.get('nombre', 'unknown')}, skipping")
         return result
 
-    if not website.startswith("http"):
-        website = "https://" + website
+    website = normalize_url(website)
 
     # --- PageSpeed Insights ---
     pagespeed_score = None

@@ -1,8 +1,12 @@
 """Pipeline orchestrator: runs agents 1→2→3→4 for a search query."""
+import asyncio
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+
+_JOB_TTL = 3600  # seconds — evict jobs older than 1 hour
 
 from app.agents.agent1_maps import scrape_google_maps
 from app.agents.agent2_contact import extract_contact
@@ -18,13 +22,21 @@ JOBS: dict[str, dict[str, Any]] = {}
 
 
 def create_job() -> str:
+    _evict_old_jobs()
     job_id = str(uuid.uuid4())
-    JOBS[job_id] = {"status": "running", "count": 0, "error": None}
+    JOBS[job_id] = {"status": "running", "count": 0, "error": None, "created_at": time.time()}
     return job_id
 
 
 def get_job(job_id: str) -> dict[str, Any] | None:
     return JOBS.get(job_id)
+
+
+def _evict_old_jobs() -> None:
+    now = time.time()
+    stale = [k for k, v in JOBS.items() if now - v.get("created_at", 0) > _JOB_TTL]
+    for k in stale:
+        del JOBS[k]
 
 
 async def run_pipeline(query: str, max_results: int, job_id: str) -> None:
@@ -45,12 +57,12 @@ async def run_pipeline(query: str, max_results: int, job_id: str) -> None:
                     business_data = dict(raw)
                     business_data["zona_busqueda"] = query
 
-                    # Agent 2 — contact info
-                    contact = await extract_contact(business_data)
+                    # Agents 2 & 3 are independent — run in parallel
+                    contact, web_info = await asyncio.gather(
+                        extract_contact(business_data),
+                        analyze_web(business_data),
+                    )
                     business_data.update(contact)
-
-                    # Agent 3 — web analysis
-                    web_info = await analyze_web(business_data)
                     business_data.update(web_info)
 
                     # Agent 4 — AI scoring

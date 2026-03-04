@@ -6,6 +6,8 @@ from typing import Any
 import httpx
 from bs4 import BeautifulSoup
 
+from app.utils.url import normalize_url
+
 logger = logging.getLogger(__name__)
 
 EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
@@ -40,8 +42,7 @@ async def extract_contact(business: dict[str, Any]) -> dict[str, Any]:
         logger.info(f"No website for {business.get('nombre', 'unknown')}, skipping")
         return result
 
-    if not website.startswith("http"):
-        website = "https://" + website
+    website = normalize_url(website)
 
     try:
         async with httpx.AsyncClient(
@@ -73,11 +74,14 @@ async def extract_contact(business: dict[str, Any]) -> dict[str, Any]:
         soup = BeautifulSoup(html, "html.parser")
         text = soup.get_text(separator=" ")
 
+        # Single pass over all anchor tags
+        all_links = soup.find_all("a", href=True)
+
         # --- Emails ---
         emails_found: set[str] = set()
 
         # From mailto links (highest quality)
-        for a in soup.find_all("a", href=True):
+        for a in all_links:
             href = a["href"]
             if href.startswith("mailto:"):
                 email = href[7:].split("?")[0].strip().lower()
@@ -91,19 +95,15 @@ async def extract_contact(business: dict[str, Any]) -> dict[str, Any]:
 
         if emails_found:
             email_list = sorted(emails_found)
-            chosen = email_list[0]
-            for pref in PRIORITY_PREFIXES:
-                for e in email_list:
-                    if e.startswith(pref):
-                        chosen = e
-                        break
+            chosen = next(
+                (e for pref in PRIORITY_PREFIXES for e in email_list if e.startswith(pref)),
+                email_list[0],
+            )
             result["email"] = chosen
 
         # --- Social media ---
-        all_links_text = " ".join(
-            str(a.get("href", "")) for a in soup.find_all("a", href=True)
-        )
-        searchable = all_links_text + " " + html
+        all_links_text = " ".join(str(a.get("href", "")) for a in all_links)
+        searchable = all_links_text + " " + text  # use parsed text, not raw HTML
 
         for platform, pattern in SOCIAL_PATTERNS.items():
             match = pattern.search(searchable)

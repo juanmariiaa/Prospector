@@ -2,11 +2,18 @@
 
 ## Project Overview
 
-<!-- UPDATE THIS: 1-2 sentences describing what this project does and why it exists -->
+Prospector Local: a multi-agent Python pipeline that automates local business prospecting. Given a free-text geographic query (e.g. "peluquerías Ávila centro"), it scrapes Google Maps, extracts contact info, analyzes web quality, and scores each business as a sales opportunity using Claude AI.
 
 ## Tech Stack
 
-<!-- Populated by discovery agent -->
+- Python 3.11+
+- FastAPI + Uvicorn (async REST API)
+- Playwright async (Google Maps scraping)
+- SQLAlchemy 2.0 async + SQLite/aiosqlite (local persistence, Supabase-ready)
+- Pydantic v2 + pydantic-settings
+- Anthropic SDK — claude-sonnet-4-20250514 (AI scoring)
+- httpx (async HTTP)
+- BeautifulSoup4 (HTML parsing)
 
 ## Your Identity
 
@@ -143,8 +150,8 @@ Log learnings: `bd comment {ID} "LEARNED: [insight]"` — captured automatically
 
 ## Supervisors
 
-<!-- Populated by discovery agent -->
 - merge-supervisor
+- general-purpose (Python/FastAPI/SQLAlchemy/Playwright)
 
 ## Current State
 
