@@ -8,6 +8,24 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 
 logger = logging.getLogger(__name__)
 
+SOCIAL_DOMAINS = {
+    "facebook.com": "facebook",
+    "instagram.com": "instagram",
+    "twitter.com": "twitter",
+    "x.com": "twitter",
+    "linkedin.com": "linkedin",
+    "tiktok.com": "tiktok",
+    "youtube.com": "youtube",
+}
+
+def _detect_social(url: str) -> str | None:
+    """Return social network name if URL belongs to a social platform, else None."""
+    url_lower = url.lower()
+    for domain, name in SOCIAL_DOMAINS.items():
+        if domain in url_lower:
+            return name
+    return None
+
 
 async def scrape_google_maps(query: str, max_results: int = 30) -> list[dict[str, Any]]:
     """
@@ -183,6 +201,10 @@ async def _extract_business_details(page) -> dict[str, Any] | None:
         if not nombre:
             return None
 
+        NOMBRE_BLACKLIST = {"resultados", "results", "más resultados", "more results"}
+        if nombre.lower().strip() in NOMBRE_BLACKLIST:
+            return None
+
         # Category — first button-like element after the name
         categoria = ""
         cat_selectors = [
@@ -247,6 +269,13 @@ async def _extract_business_details(page) -> dict[str, Any] | None:
                 else:
                     website = ""
 
+        web_red_social = None
+        if website:
+            social = _detect_social(website)
+            if social:
+                web_red_social = social
+                website = ""
+
         # Rating
         rating_google = None
         rating_selectors = [
@@ -289,6 +318,7 @@ async def _extract_business_details(page) -> dict[str, Any] | None:
             "telefono": telefono,
             "website": website,
             "tiene_web": bool(website),
+            "web_red_social": web_red_social,
             "rating_google": rating_google,
             "num_reseñas": num_reseñas,
             "maps_url": "",  # will be set by caller

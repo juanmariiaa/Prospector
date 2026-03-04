@@ -17,6 +17,7 @@ class BusinessCreate(BaseModel):
     oportunidad_score: int | None = None
     oportunidad_razon: str | None = None
     web_es_mobile: bool | None = None
+    web_red_social: str | None = None
     web_velocidad_ms: int | None = None
     maps_url: str | None = None
     zona_busqueda: str | None = None
@@ -39,6 +40,7 @@ class BusinessOut(BaseModel):
     oportunidad_score: int | None = None
     oportunidad_razon: str | None = None
     web_es_mobile: bool | None = None
+    web_red_social: str | None = None
     web_velocidad_ms: int | None = None
     maps_url: str | None = None
     zona_busqueda: str | None = None

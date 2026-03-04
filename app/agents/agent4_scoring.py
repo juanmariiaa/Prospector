@@ -75,6 +75,10 @@ async def score_business(business: dict[str, Any]) -> dict[str, Any]:
     raw = ""
     try:
         client = AsyncOpenAI(api_key=settings.groq_api_key, base_url="https://api.groq.com/openai/v1")
+        logger.debug(
+            f"Groq request body for {business.get('nombre')}:\n"
+            f"{json.dumps({'model': 'llama-3.3-70b-versatile', 'max_tokens': 256, 'messages': [{'role': 'user', 'content': prompt}]}, ensure_ascii=False, indent=2)}"
+        )
         message = await client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             max_tokens=256,
