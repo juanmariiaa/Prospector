@@ -58,46 +58,40 @@ async def analyze_web(business: dict[str, Any]) -> dict[str, Any]:
 
     # --- PageSpeed Insights ---
     pagespeed_score = None
-    if settings.pagespeed_api_key:
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.get(
-                    PAGESPEED_API_URL,
-                    params={
-                        "url": website,
-                        "strategy": "mobile",
-                        "key": settings.pagespeed_api_key,
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
+    try:
+        params: dict = {"url": website, "strategy": "mobile"}
+        api_key = settings.pagespeed_api_key
+        if api_key and api_key not in ("your-key-here", ""):
+            params["key"] = api_key
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(PAGESPEED_API_URL, params=params)
+            resp.raise_for_status()
+            data = resp.json()
 
-            categories = data.get("lighthouseResult", {}).get("categories", {})
-            perf = categories.get("performance", {})
-            pagespeed_score = perf.get("score")  # 0.0 – 1.0
+        categories = data.get("lighthouseResult", {}).get("categories", {})
+        perf = categories.get("performance", {})
+        pagespeed_score = perf.get("score")  # 0.0 – 1.0
 
-            # Load time from FCP audit
-            audits = data.get("lighthouseResult", {}).get("audits", {})
-            fcp = audits.get("first-contentful-paint", {})
-            fcp_ms = fcp.get("numericValue")
-            if fcp_ms:
-                result["web_velocidad_ms"] = int(fcp_ms)
+        # Load time from FCP audit
+        audits = data.get("lighthouseResult", {}).get("audits", {})
+        fcp = audits.get("first-contentful-paint", {})
+        fcp_ms = fcp.get("numericValue")
+        if fcp_ms:
+            result["web_velocidad_ms"] = int(fcp_ms)
 
-            # Mobile-friendly check
-            viewport_audit = audits.get("viewport", {})
-            result["web_es_mobile"] = viewport_audit.get("score", 0) == 1
+        # Mobile-friendly check
+        viewport_audit = audits.get("viewport", {})
+        result["web_es_mobile"] = viewport_audit.get("score", 0) == 1
 
-            logger.info(
-                f"PageSpeed for {website}: score={pagespeed_score}, "
-                f"fcp={result['web_velocidad_ms']}ms"
-            )
+        logger.info(
+            f"PageSpeed for {website}: score={pagespeed_score}, "
+            f"fcp={result['web_velocidad_ms']}ms"
+        )
 
-        except httpx.TimeoutException:
-            logger.warning(f"PageSpeed timeout for {website}")
-        except Exception as e:
-            logger.error(f"PageSpeed error for {website}: {e}")
-    else:
-        logger.info("No PAGESPEED_API_KEY set, skipping PageSpeed analysis")
+    except httpx.TimeoutException:
+        logger.warning(f"PageSpeed timeout for {website}")
+    except Exception as e:
+        logger.error(f"PageSpeed error for {website}: {e}")
 
     result["web_score"] = _score_from_performance(pagespeed_score)
 
